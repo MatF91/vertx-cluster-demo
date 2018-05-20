@@ -1,6 +1,12 @@
 package pl.mf.vertx;
 
 import java.util.Date;
+import java.util.Set;
+
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -17,6 +23,7 @@ public class DemoVerticle extends AbstractVerticle {
 
 	@Override
 	public void start(Future<Void> startFuture) throws Exception {
+		logSomeClusterInformations();
 		initializeVerticleFields();
 
 		vertx.createHttpServer().requestHandler(handler -> {
@@ -47,6 +54,23 @@ public class DemoVerticle extends AbstractVerticle {
 		}).listen(httpServerPort, httpServerHost);
 	}
 
+	/**
+	 * Log some informations about working Hazelcast cluster
+	 */
+	private void logSomeClusterInformations() {
+		Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+		LogUtil.printMessageWithDate("Hazelcast instances on current JVM: " + instances.size());
+		for (HazelcastInstance hazelcastInstance : instances) {
+			Cluster hazelcastCluster = hazelcastInstance.getCluster();
+			LogUtil.printMessageWithDate("Local member: " + hazelcastCluster.getLocalMember());
+			Set<Member> members = hazelcastCluster.getMembers();
+			LogUtil.printMessageWithDate("All hazelcast instance members: " + members.size());
+		}
+	}
+
+	/**
+	 * Initializing field required for this demo
+	 */
 	private void initializeVerticleFields() {
 		httpServerPort = Integer.parseInt(PropertiesReaderUtil.getProperty("http-server-port"));
 		httpServerHost = PropertiesReaderUtil.getProperty("http-server-host");
