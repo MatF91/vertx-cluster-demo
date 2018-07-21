@@ -28,6 +28,7 @@ public class PropertiesReaderUtil {
 			}
 		}
 
+		LogUtil.printMessageWithDate("Property: '" + property + "', value: " + propertyValue);
 		return propertyValue;
 	}
 }

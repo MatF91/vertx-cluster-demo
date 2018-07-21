@@ -17,6 +17,9 @@ public class DemoVerticle extends AbstractVerticle {
 	private static String ASYNCMAP_ADDRESS = "VerticlesSharedMap";
 	private static String HTTP_SERVER_ADD_TO_MAP = "/add";
 	private static String HTTP_SERVER_MAP_ENTRIES = "/entries";
+	private static String HTTP_SERVER_MAP_EVENTBUS_MSG = "/eventbusMessage";
+	private static String EVENTBUS_ADDRESS = "eventbus_address";
+	private static String EVENTBUS_MESSAGE = "Eventbus message";
 	private AsyncMap<Integer, String> verticleData;
 	private int httpServerPort;
 	private String httpServerHost;
@@ -24,7 +27,7 @@ public class DemoVerticle extends AbstractVerticle {
 	@Override
 	public void start(Future<Void> startFuture) throws Exception {
 		logSomeClusterInformations();
-		initializeVerticleFields();
+		init();
 
 		vertx.createHttpServer().requestHandler(handler -> {
 			LogUtil.printMessageWithDate("PATH " + handler.path());
@@ -48,6 +51,10 @@ public class DemoVerticle extends AbstractVerticle {
 					}
 					handler.response().end();
 				});
+			} else if (handler.path().equals(HTTP_SERVER_MAP_EVENTBUS_MSG)) {
+				response.write("Publishing eventbus message... Check logs.");
+				vertx.eventBus().publish(EVENTBUS_ADDRESS, EVENTBUS_MESSAGE);
+				handler.response().end();
 			} else {
 				handler.response().end();
 			}
@@ -66,12 +73,13 @@ public class DemoVerticle extends AbstractVerticle {
 			Set<Member> members = hazelcastCluster.getMembers();
 			LogUtil.printMessageWithDate("All hazelcast instance members: " + members.size());
 		}
+		LogUtil.printMessageWithDate("vertx.isClustered: " + vertx.isClustered());
 	}
 
 	/**
-	 * Initializing field required for this demo
+	 * Initializing fields and consumers for this demo
 	 */
-	private void initializeVerticleFields() {
+	private void init() {
 		httpServerPort = Integer.parseInt(PropertiesReaderUtil.getProperty("http-server-port"));
 		httpServerHost = PropertiesReaderUtil.getProperty("http-server-host");
 		vertx.sharedData().<Integer, String>getAsyncMap(ASYNCMAP_ADDRESS, resultHandler -> {
@@ -80,6 +88,10 @@ public class DemoVerticle extends AbstractVerticle {
 				LogUtil.printMessageWithDate("Access to map: SUCCESS");
 			} else if (resultHandler.failed())
 				LogUtil.printMessageWithDate("Access to map: FAILED");
+		});
+		vertx.eventBus().consumer(EVENTBUS_ADDRESS, messageConsumerHandler -> {
+			LogUtil.printMessageWithDate(
+					"Consumer " + httpServerHost + ":" + httpServerPort + ": " + messageConsumerHandler.body());
 		});
 	}
 
