@@ -18,12 +18,6 @@ public class Starter {
 		Integer clusterPublicPort = Integer.parseInt(PropertiesReaderUtil.getProperty("public-cluster-port"));
 		ClusterManager mgr = new HazelcastClusterManager();
 
-		/*
-		 * After enabling clustering we need specifying cluster hostname & port - not
-		 * necessary only when we run local instances. Default port is randomly picked
-		 * by app.
-		 * 
-		 */
 		VertxOptions options = new VertxOptions().setClusterManager(mgr).setClusterHost(clusterHost)
 				.setClusterPort(clusterPort).setClusterPublicHost(clusterPublicHost)
 				.setClusterPublicPort(clusterPublicPort);
